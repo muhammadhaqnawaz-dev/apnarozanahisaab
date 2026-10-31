@@ -56,12 +56,25 @@ summary{display:flex;justify-content:space-between;gap:8px;cursor:pointer}
 .dt{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .foot{font-size:12px;color:var(--mu);text-align:center;margin:12px 0 24px}
 .tab{display:none}.tab.on{display:block}
-@media print{.nav,.noprint,.go{display:none!important}body{background:#fff}}
+.ov{position:fixed;inset:0;background:var(--bg);z-index:20;display:flex;align-items:center;justify-content:center;padding:14px;overflow:auto}
+.who{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;margin-bottom:6px}
+@media print{.nav,.noprint,.go,.who{display:none!important}body{background:#fff}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-<div class="w">
+<div id="auth" class="ov" style="display:none"><div class="card" style="width:100%;max-width:380px;margin:0">
+<h1 style="text-align:center">💰 Rozana Hisaab</h1>
+<div class="seg" id="atabs" style="grid-template-columns:1fr 1fr"></div>
+<label>Email</label><input id="ae" type="email" autocomplete="email" placeholder="aap@gmail.com">
+<label>Password</label><input id="ap" type="password" autocomplete="current-password" placeholder="kam az kam 6 characters">
+<div id="amsg" style="font-size:13px;margin-top:8px"></div>
+<button class="go" id="abtn" data-a="auth">Login</button>
+<p style="text-align:center;font-size:13px"><a href="#" data-a="forgot" class="mu">Password bhool gaye?</a></p>
+</div></div>
+<div class="w" id="app" style="display:none">
 <h1>💰 Rozana Hisaab</h1>
+<div class="who" id="who"></div>
 <div class="nav" id="nav">
   <button data-a="tab" data-v="home">🏠 Home</button>
   <button data-a="tab" data-v="rep">📊 Reports</button>
@@ -105,7 +118,7 @@ summary{display:flex;justify-content:space-between;gap:8px;cursor:pointer}
 <div class="tab" id="t-set">
   <div class="card">
     <h2>Data ka backup</h2>
-    <p class="mu" style="font-size:13px;margin-top:0">Aap ka data sirf is phone/browser mein save hota hai. Phone badalne ya browser data clear karne se pehle backup zaroor download karein.</p>
+    <p class="mu" style="font-size:13px;margin-top:0">Login karne par aap ka data aap ke account mein cloud par save hota hai aur kisi bhi phone se login kar ke mil jata hai. Phir bhi kabhi kabhi backup download kar lein.</p>
     <button class="btn" data-a="backup">⬇️ Backup download karein</button>
     <label>Backup wapis load karein</label>
     <input type="file" id="rf" accept=".json,application/json">
@@ -117,7 +130,9 @@ summary{display:flex;justify-content:space-between;gap:8px;cursor:pointer}
   </div>
 </div>
 
-<div class="foot">Har banda apna data apne device mein rakhta hai. Koi aur aap ka hisaab nahi dekh sakta.</div>
+<div class="tab" id="t-admin"><div id="adm"></div></div>
+
+<div class="foot">Har banda sirf apna hisaab dekh sakta hai. Koi aur aap ka data nahi dekh sakta.</div>
 </div>
 
 <script>
@@ -147,10 +162,103 @@ var HN={exp:"Kharcha ke Heads",inc:"Income ke Heads",sav:"Savings ke Heads"};
 var TN={exp:"Kharcha",inc:"Income",sav:"Bachat Jama",wd:"Bachat Nikalna"};
 var MN=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 function clone(o){return JSON.parse(JSON.stringify(o))}
-var S=null;
-try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
-if(!S||!S.cats||!S.tx)S={cats:clone(DEF),tx:[]};
-function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){alert("Data save nahi ho saka. Private mode band karein.")}}
+/* ===== SUPABASE SETTINGS (Login ke liye) =====
+   Supabase se apna Project URL aur anon public key yahan paste karein.
+   Khali chhorein to app bina login ke chalega (sirf device par). */
+var SUPABASE_URL="https://grvcojkwamktfdzgofpk.supabase.co";
+var SUPABASE_KEY="sb_publishable_JQCoeW6pYhiR-ItHl_oUeA_s6Sq_U1X";
+var CLOUD=!!(SUPABASE_URL&&SUPABASE_KEY&&window.supabase);
+var sb=CLOUD?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
+var USER=null,S=null,tmr=null,AM="in";
+function lkey(){return K+"_"+(USER?USER.id:"local")}
+function fresh(){return{cats:clone(DEF),tx:[]}}
+function lload(){var o=null;try{o=JSON.parse(localStorage.getItem(lkey()))}catch(e){}return(o&&o.cats&&o.tx)?o:null}
+function setSync(t){var e=document.getElementById("sync");if(e)e.textContent=t}
+function save(){
+  try{localStorage.setItem(lkey(),JSON.stringify(S))}catch(e){}
+  if(USER){setSync("⏳ Save ho raha hai...");clearTimeout(tmr);tmr=setTimeout(push,800)}
+}
+async function push(){
+  var r=await sb.from("app_data").upsert({user_id:USER.id,data:S,updated_at:new Date().toISOString()});
+  setSync(r.error?"⚠️ Cloud save nahi hua (internet check karein)":"☁️ Cloud mein save");
+}
+function amsg(t,ok){var e=document.getElementById("amsg");e.textContent=t||"";e.style.color=ok?"var(--pr)":"var(--rd)"}
+function drawAuth(){
+  document.getElementById("atabs").innerHTML='<button data-a="amode" data-v="in" class="'+(AM=="in"?"on":"")+'">Login</button><button data-a="amode" data-v="up" class="'+(AM=="up"?"on":"")+'">Naya Account</button>';
+  document.getElementById("abtn").textContent=AM=="up"?"Account Banayen":"Login";
+  amsg("");
+}
+async function doAuth(){
+  var em=document.getElementById("ae").value.trim(),pw=document.getElementById("ap").value,r;
+  if(!em||!pw){amsg("Email aur password likhein.");return}
+  amsg("Intezar karein...",true);
+  if(AM=="up"){
+    if(pw.length<6){amsg("Password kam az kam 6 characters ka rakhein.");return}
+    r=await sb.auth.signUp({email:em,password:pw});
+    if(r.error){amsg(r.error.message);return}
+    if(r.data.session)await enterUser(r.data.user);
+    else amsg("Account ban gaya! Apni email check karein, link par click kar ke confirm karein, phir Login karein.",true);
+  }else{
+    r=await sb.auth.signInWithPassword({email:em,password:pw});
+    if(r.error){amsg(r.error.message);return}
+    await enterUser(r.data.user);
+  }
+}
+async function forgot(){
+  var em=document.getElementById("ae").value.trim();
+  if(!em){amsg("Pehle upar apni email likhein, phir dobara dabayen.");return}
+  var r=await sb.auth.resetPasswordForEmail(em,{redirectTo:location.origin});
+  amsg(r.error?r.error.message:"Password reset ka link email par bhej diya gaya hai.",!r.error);
+}
+async function enterUser(u){
+  var r=await sb.from("app_data").select("data").eq("user_id",u.id).maybeSingle();
+  if(r.error){amsg("Cloud se data nahi mila. Internet check kar ke dobara try karein.");return}
+  USER=u;
+  if(r.data&&r.data.data&&r.data.data.cats){S=r.data.data;try{localStorage.setItem(lkey(),JSON.stringify(S))}catch(e){}}
+  else{S=lload()||fresh();await push()}
+  startApp();
+}
+function startApp(){
+  document.getElementById("auth").style.display="none";
+  document.getElementById("app").style.display="block";
+  document.getElementById("dt").value=iso(new Date());
+  var m=(USER&&USER.user_metadata)||{};
+  document.getElementById("who").innerHTML=USER?'👤 <b>'+esc(USER.email)+'</b> <button class="btn" data-a="logout">Logout</button> <span id="sync" class="mu"></span>':'';
+  drawForm();showTab();
+  if(USER)checkAdmin();
+}
+async function checkAdmin(){
+  var r=await sb.rpc("is_admin");
+  if(r.data!==true)return;
+  var n=document.getElementById("nav");
+  n.style.gridTemplateColumns="repeat(5,1fr)";
+  n.insertAdjacentHTML("beforeend",'<button data-a="tab" data-v="admin">👑 Admin</button>');
+}
+async function loadAdmin(){
+  var box=document.getElementById("adm");
+  box.innerHTML='<small class="mu">Load ho raha hai...</small>';
+  var r=await sb.rpc("admin_list_users");
+  if(r.error){box.innerHTML='<div class="card neg">'+esc(r.error.message)+'</div>';return}
+  var L=r.data||[];
+  box.innerHTML='<div class="card k"><small>Total users</small><b>'+L.length+'</b></div><div class="card">'+(L.length?L.map(function(u){
+    return '<div class="row"><div><b>'+esc(u.email)+'</b>'+(u.banned?' <span class="neg">(Blocked)</span>':'')+'<small>Joined '+String(u.created_at).slice(0,10)+' · Last login '+(u.last_sign_in_at?String(u.last_sign_in_at).slice(0,10):'—')+' · '+u.entries+' entries</small></div><div style="white-space:nowrap"><button class="btn" data-a="aban" data-id="'+u.id+'" data-b="'+(u.banned?0:1)+'">'+(u.banned?'Unblock':'Block')+'</button> <button class="btn red" data-a="adel" data-id="'+u.id+'">Delete</button></div></div>';
+  }).join(""):'<small class="mu">Abhi koi user nahi.</small>')+'</div>';
+}
+async function boot(){
+  if(!CLOUD){
+    if(SUPABASE_URL&&SUPABASE_KEY)alert("Login system load nahi hua. Page refresh karein.");
+    S=lload()||fresh();startApp();return;
+  }
+  sb.auth.onAuthStateChange(function(ev){
+    if(ev=="PASSWORD_RECOVERY")setTimeout(function(){
+      var p=prompt("Naya password likhein (kam az kam 6 characters):");
+      if(p&&p.length>=6)sb.auth.updateUser({password:p}).then(function(x){alert(x.error?x.error.message:"Password badal gaya.")});
+    },0);
+  });
+  var g=await sb.auth.getSession();
+  if(g.data&&g.data.session)await enterUser(g.data.session.user);
+  else{document.getElementById("auth").style.display="flex";drawAuth()}
+}
 function $(s){return document.querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function rs(n){return "Rs. "+Math.round(n).toLocaleString("en-US")}
@@ -162,7 +270,7 @@ var cur="exp",TAB="home",R={p:"month",o:0,f:"",t:""};
 
 /* ---------- Tabs ---------- */
 function showTab(){
-  ["home","rep","heads","set"].forEach(function(t){$("#t-"+t).className="tab"+(t==TAB?" on":"")});
+  ["home","rep","heads","set","admin"].forEach(function(t){$("#t-"+t).className="tab"+(t==TAB?" on":"")});
   document.querySelectorAll("#nav button").forEach(function(b){b.className=b.dataset.v==TAB?"on":""});
   renderAll();
 }
@@ -290,7 +398,9 @@ function drawHeads(){
 document.addEventListener("click",function(e){
   var b=e.target.closest("[data-a]");if(!b)return;
   var a=b.dataset.a,d=b.dataset,v;
-  if(a=="tab"){TAB=d.v;showTab()}
+  if(a=="tab"){TAB=d.v;showTab();if(TAB=="admin")loadAdmin()}
+  else if(a=="aban"){sb.rpc("admin_set_block",{uid:d.id,block:d.b=="1"}).then(function(r){if(r.error)alert(r.error.message);loadAdmin()})}
+  else if(a=="adel"){if(confirm("Is user ka account aur saara data hamesha ke liye delete ho jayega. Pakka?"))sb.rpc("admin_delete_user",{uid:d.id}).then(function(r){if(r.error)alert(r.error.message);loadAdmin()})}
   else if(a=="type"){cur=d.v;drawForm()}
   else if(a=="add")addTx();
   else if(a=="del"){if(confirm("Yeh entry delete karein?")){S.tx=S.tx.filter(function(t){return t.id!=d.id});save();renderAll()}}
@@ -302,6 +412,10 @@ document.addEventListener("click",function(e){
   else if(a=="addsub"){var inp=$("#ns-"+d.t+"-"+d.i);v=inp.value.trim();if(!v)return;var c=S.cats[d.t][d.i];if(c.s.indexOf(v)<0)c.s.push(v);save();drawHeads();drawForm()}
   else if(a=="delsub"){S.cats[d.t][d.i].s.splice(+d.j,1);save();drawHeads();drawForm()}
   else if(a=="delhead"){if(confirm("Yeh head delete karein? Purani entries rahengi.")){S.cats[d.t].splice(+d.i,1);save();drawHeads();drawForm()}}
+  else if(a=="amode"){AM=d.v;drawAuth()}
+  else if(a=="auth")doAuth();
+  else if(a=="forgot"){e.preventDefault();forgot()}
+  else if(a=="logout"){sb.auth.signOut().then(function(){location.reload()})}
   else if(a=="backup")dl("rozana-hisaab-backup-"+iso(new Date())+".json",JSON.stringify(S),"application/json",false);
   else if(a=="rhead"){if(confirm("Saare heads default ho jayenge. Aap ke banaye heads ud jayenge. Continue?")){S.cats=clone(DEF);save();renderAll();drawForm()}}
   else if(a=="rall"){if(confirm("Saari entries aur heads delete ho jayenge! Pakka?")){S={cats:clone(DEF),tx:[]};save();renderAll();drawForm()}}
@@ -321,8 +435,8 @@ document.addEventListener("change",function(e){
     fr.readAsText(t.files[0]);
   }
 });
-$("#dt").value=iso(new Date());
-drawForm();showTab();
+document.addEventListener("keydown",function(e){if(e.key=="Enter"&&e.target.id=="ap")doAuth()});
+boot();
 </script>
 </body>
 </html>

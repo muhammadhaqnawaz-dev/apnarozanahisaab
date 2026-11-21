@@ -32,18 +32,18 @@ window.APP_CONFIG = {
        "By Muhammad Haq Nawaz – Digital Afridi Services" wala button
        click karne par yahan jayega. Abhi apna LinkedIn profile link likhein,
        baad mein apni website ka link yahin badal dein. */
-    url:   "",         // "www.linkedin.com/in/mhaqnawaz"
+  url:   "https://www.linkedin.com/in/mhaqnawaz",
 
-    tag:   "Free personal expense tracker",
-    links: [
-      { t: "💼 LinkedIn",  u: "" },   // "www.linkedin.com/in/mhaqnawaz"
-      { t: "🌐 Website",   u: "" },   // "https://www.youtube.com/@digitalafridiofficial"
-      { t: "▶️ YouTube",   u: "" },   // "https://www.youtube.com/@digitalafridiofficial"
-      { t: "🔗 Linktree",  u: "" },   // "https://linktr.ee/https://linktr.ee/digitalafridi"
-      { t: "📘 Facebook",  u: "" },   // "https://www.facebook.com/share/1BxZkTqiTC/"
-      { t: "📸 Instagram", u: "" },   // "https://instagram.com/haqqu_afridi   "
-      { t: "💬 WhatsApp",  u: "" },   // "https://wa.me/923088970242"
-      { t: "✉️ Email",     u: "" }    // "mailto:contact.digitalafridi@gmail.com"
+  tag:   "Free personal expense tracker",
+  links: [
+      { t: "💼 LinkedIn",  u: "https://www.linkedin.com/in/mhaqnawaz" },
+      { t: "🌐 Website",   u: "" },
+      { t: "▶️ YouTube",   u: "https://www.youtube.com/@digitalafridiofficial" },
+      { t: "🔗 Linktree",  u: "https://linktr.ee/digitalafridi" },
+      { t: "📘 Facebook",  u: "https://www.facebook.com/share/1BxZkTqiTC/" },
+      { t: "📸 Instagram", u: "https://instagram.com/haqqu_afridi" },
+      { t: "💬 WhatsApp",  u: "https://wa.me/923088970242" },
+      { t: "✉️ Email",     u: "mailto:contact.digitalafridi@gmail.com" }
     ]
   }
 };

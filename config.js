@@ -21,7 +21,7 @@ window.APP_CONFIG = {
   /* ---- 3) FEEDBACK BUTTON ----
      Yahan Google Form ya WhatsApp ka link likhein. Khali ho to
      feedback button aap ke upar wale brand link par le jayega. */
-  feedbackUrl: "",   // "https://forms.gle/xxxx" ya "https://wa.me/923001234567"
+  feedbackUrl: "",   // "" ya "https://wa.me/923088970242"
 
   /* ---- 4) APNI BRANDING ---- */
   brand: {
@@ -32,18 +32,18 @@ window.APP_CONFIG = {
        "By Muhammad Haq Nawaz – Digital Afridi Services" wala button
        click karne par yahan jayega. Abhi apna LinkedIn profile link likhein,
        baad mein apni website ka link yahin badal dein. */
-    url:   "",         // "https://www.linkedin.com/in/aapka-profile"
+    url:   "",         // "www.linkedin.com/in/mhaqnawaz"
 
     tag:   "Free personal expense tracker",
     links: [
-      { t: "💼 LinkedIn",  u: "" },   // "https://www.linkedin.com/in/aapka-profile"
-      { t: "🌐 Website",   u: "" },   // "https://aapkiwebsite.com"
-      { t: "▶️ YouTube",   u: "" },   // "https://youtube.com/@aapkachannel"
-      { t: "🔗 Linktree",  u: "" },   // "https://linktr.ee/aapkanaam"
-      { t: "📘 Facebook",  u: "" },   // "https://facebook.com/aapkapage"
-      { t: "📸 Instagram", u: "" },   // "https://instagram.com/aapkaaccount"
-      { t: "💬 WhatsApp",  u: "" },   // "https://wa.me/923001234567" (92 ke saath, + aur shuru ki 0 ke baghair)
-      { t: "✉️ Email",     u: "" }    // "mailto:aapkiemail@gmail.com"
+      { t: "💼 LinkedIn",  u: "" },   // "www.linkedin.com/in/mhaqnawaz"
+      { t: "🌐 Website",   u: "" },   // "https://www.youtube.com/@digitalafridiofficial"
+      { t: "▶️ YouTube",   u: "" },   // "https://www.youtube.com/@digitalafridiofficial"
+      { t: "🔗 Linktree",  u: "" },   // "https://linktr.ee/https://linktr.ee/digitalafridi"
+      { t: "📘 Facebook",  u: "" },   // "https://www.facebook.com/share/1BxZkTqiTC/"
+      { t: "📸 Instagram", u: "" },   // "https://instagram.com/haqqu_afridi   "
+      { t: "💬 WhatsApp",  u: "" },   // "https://wa.me/923088970242"
+      { t: "✉️ Email",     u: "" }    // "mailto:contact.digitalafridi@gmail.com"
     ]
   }
 };

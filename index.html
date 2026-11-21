@@ -5,7 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f7a4d">
 <meta name="description" content="Rozana Hisaab - apna kharcha, income aur bachat track karein. Daily, weekly, monthly aur yearly reports.">
-<title>Rozana Hisaab - Kharcha Tracker</title>
+<title>Apna Rozana Hisaab — Digital Afridi Services</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rozana Hisaab">
 <style>
 :root{--bg:#f4f6f4;--card:#fff;--tx:#1b2a22;--mu:#6b7a72;--pr:#0f7a4d;--rd:#c0392b;--bl:#1f6fb2;--bd:#dfe5e1}
 @media (prefers-color-scheme:dark){:root{--bg:#111815;--card:#1a2420;--tx:#e8f0ec;--mu:#93a39a;--pr:#34c58a;--rd:#ff7b6b;--bl:#6db5f0;--bd:#2b3832}}
@@ -58,22 +64,36 @@ summary{display:flex;justify-content:space-between;gap:8px;cursor:pointer}
 .tab{display:none}.tab.on{display:block}
 .ov{position:fixed;inset:0;background:var(--bg);z-index:20;display:flex;align-items:center;justify-content:center;padding:14px;overflow:auto}
 .who{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;margin-bottom:6px}
-@media print{.nav,.noprint,.go,.who{display:none!important}body{background:#fff}}
+.sc{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th,.tbl td{border-bottom:1px solid var(--bd);padding:6px 4px;text-align:left;vertical-align:top}
+.tbl .r{text-align:right;white-space:nowrap}
+.tbl tr.tt td{font-weight:700;border-top:2px solid var(--tx)}
+.bb{display:inline-block;padding:7px 14px;border:1px solid var(--pr);border-radius:999px;color:var(--pr);background:transparent;font-size:13px;font-weight:600;text-decoration:none;line-height:1.3}
+a.bb:hover{background:var(--pr);color:#fff}
+.po{display:none}
+@media print{.nav,.noprint,.go,.who{display:none!important}body{background:#fff;color:#000}.po{display:block!important;margin-bottom:8px}body.pl h1,body.pl .foot,body.pl .tab:not(#t-rep),body.pl #rep>*:not(#ledger){display:none!important}#ledger{border:0;padding:0}.tbl{font-size:11px;color:#000}.neg,.pos,.sv{color:#000!important}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="config.js"></script>
 </head>
 <body>
 <div id="auth" class="ov" style="display:none"><div class="card" style="width:100%;max-width:380px;margin:0">
-<h1 style="text-align:center">💰 Rozana Hisaab</h1>
+<h1 style="text-align:center">💰 Apna Rozana Hisaab</h1>
 <div class="seg" id="atabs" style="grid-template-columns:1fr 1fr"></div>
 <label>Email</label><input id="ae" type="email" autocomplete="email" placeholder="aap@gmail.com">
 <label>Password</label><input id="ap" type="password" autocomplete="current-password" placeholder="kam az kam 6 characters">
 <div id="amsg" style="font-size:13px;margin-top:8px"></div>
 <button class="go" id="abtn" data-a="auth">Login</button>
 <p style="text-align:center;font-size:13px"><a href="#" data-a="forgot" class="mu">Password bhool gaye?</a></p>
+<details class="mu" style="font-size:12px;margin-top:6px"><summary style="display:block;cursor:pointer;text-align:center">🔒 Privacy note</summary><p style="margin:6px 0 0">Aap ka data cloud (Supabase) par save hota hai aur sirf aap ke login se app mein nazar aata hai. App chalane wala admin technical tor par database tak access rakhta hai, lekin admin panel mein aap ka hisaab nahi dikhta. Aap Settings se apna backup le sakte hain aur apna data delete kar sakte hain.</p></details>
+<div id="brand2"></div>
 </div></div>
 <div class="w" id="app" style="display:none">
-<h1>💰 Rozana Hisaab</h1>
+<h1>💰 Apna Rozana Hisaab</h1>
+<div id="hbrand" style="margin:-2px 0 10px"></div>
 <div class="who" id="who"></div>
 <div class="nav" id="nav">
   <button data-a="tab" data-v="home">🏠 Home</button>
@@ -128,11 +148,12 @@ summary{display:flex;justify-content:space-between;gap:8px;cursor:pointer}
     <button class="btn" data-a="rhead">Heads default par wapis</button>
     <button class="btn red" data-a="rall">Saara data delete karein</button>
   </div>
+  <div class="card" id="aboutc"></div>
 </div>
 
 <div class="tab" id="t-admin"><div id="adm"></div></div>
 
-<div class="foot">Har banda sirf apna hisaab dekh sakta hai. Koi aur aap ka data nahi dekh sakta.</div>
+<div class="foot"><div id="brand"></div>Har banda sirf apna hisaab dekh sakta hai. <span id="ver"></span></div>
 </div>
 
 <script>
@@ -162,11 +183,12 @@ var HN={exp:"Kharcha ke Heads",inc:"Income ke Heads",sav:"Savings ke Heads"};
 var TN={exp:"Kharcha",inc:"Income",sav:"Bachat Jama",wd:"Bachat Nikalna"};
 var MN=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 function clone(o){return JSON.parse(JSON.stringify(o))}
-/* ===== SUPABASE SETTINGS (Login ke liye) =====
-   Supabase se apna Project URL aur anon public key yahan paste karein.
-   Khali chhorein to app bina login ke chalega (sirf device par). */
-var SUPABASE_URL="https://grvcojkwamktfdzgofpk.supabase.co";
-var SUPABASE_KEY="sb_publishable_JQCoeW6pYhiR-ItHl_oUeA_s6Sq_U1X";
+/* Settings (Supabase keys aur Brand links) config.js file se aati hain. */
+var CFG=window.APP_CONFIG||{};
+var SUPABASE_URL=CFG.supabaseUrl||"";
+var SUPABASE_KEY=CFG.supabaseKey||"";
+var BRAND=CFG.brand||{name:"Digital Afridi Services",owner:"Muhammad Haq Nawaz",tag:"",links:[]};
+var APP_VERSION=CFG.version||"1.1";
 var CLOUD=!!(SUPABASE_URL&&SUPABASE_KEY&&window.supabase);
 var sb=CLOUD?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
 var USER=null,S=null,tmr=null,AM="in";
@@ -183,7 +205,57 @@ async function push(){
   setSync(r.error?"⚠️ Cloud save nahi hua (internet check karein)":"☁️ Cloud mein save");
 }
 function amsg(t,ok){var e=document.getElementById("amsg");e.textContent=t||"";e.style.color=ok?"var(--pr)":"var(--rd)"}
+function safeUrl(u){u=String(u||"").trim();return/^(https?:\/\/|mailto:)/i.test(u)?u:""}
+function brandLabel(){return "By "+(BRAND.owner||"Muhammad Haq Nawaz")+" – "+(BRAND.name||"Digital Afridi Services")}
+function brandUrl(){
+  var u=safeUrl(BRAND.url);if(u)return u;
+  var ls=BRAND.links||[];
+  for(var i=0;i<ls.length;i++){if(safeUrl(ls[i].u))return safeUrl(ls[i].u)}
+  return "";
+}
+function brandBtn(){
+  var u=brandUrl(),t=esc(brandLabel());
+  return u?'<a class="bb" href="'+esc(u)+'" target="_blank" rel="noopener">'+t.replace(/ (\S+)$/,'&nbsp;$1')+'&nbsp;↗</a>':'<span class="bb" style="border-style:dashed">'+t+'</span>';
+}
+function linkChips(){
+  var ls=(BRAND.links||[]).filter(function(l){return safeUrl(l.u)});
+  return ls.length?'<div class="chips" style="justify-content:center">'+ls.map(function(l){return '<a class="btn" style="text-decoration:none" href="'+esc(safeUrl(l.u))+'" target="_blank" rel="noopener">'+esc(l.t)+'</a>'}).join("")+'</div>':'';
+}
+function brandHTML(card){
+  return '<div'+(card?' class="card" style="text-align:center"':' style="text-align:center;margin-top:10px"')+'>'+brandBtn()
+   +(BRAND.tag?'<div class="mu" style="font-size:12px;margin:6px 0 8px">'+esc(BRAND.tag)+'</div>':'<div style="height:8px"></div>')+linkChips()+'</div>';
+}
+function isStandalone(){return (window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true}
+var DEFERRED=null;
+window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();DEFERRED=e;drawAbout()});
+window.addEventListener("appinstalled",function(){DEFERRED=null;drawAbout()});
+function installApp(){
+  if(DEFERRED){DEFERRED.prompt();DEFERRED.userChoice.then(function(){DEFERRED=null;drawAbout()},function(){})}
+  else alert("Browser ka menu (⋮ ya Share ka button) kholen aur 'Add to Home screen' ya 'Install app' chunein.");
+}
+function shareApp(){
+  var url=location.href.split(/[?#]/)[0],txt="Apna Rozana Hisaab — apna kharcha, income aur bachat ka hisaab. Free try karein:";
+  if(navigator.share){navigator.share({title:"Apna Rozana Hisaab",text:txt,url:url}).catch(function(){})}
+  else window.open("https://wa.me/?text="+encodeURIComponent(txt+" "+url),"_blank","noopener");
+}
+function drawAbout(){
+  var c=document.getElementById("aboutc");if(!c)return;
+  var fb=safeUrl(CFG.feedbackUrl)||brandUrl();
+  c.innerHTML='<h2>ℹ️ Is app ke bare mein</h2><p style="margin:0 0 10px"><b>Apna Rozana Hisaab</b> <span class="mu">v'+esc(APP_VERSION)+'</span></p>'+brandBtn()
+   +'<div class="chips" style="margin-top:12px"><button class="btn" data-a="share">📤 Dost ko bhejein</button>'
+   +(fb?'<a class="btn" style="text-decoration:none" href="'+esc(fb)+'" target="_blank" rel="noopener">💬 Feedback / Rai dein</a>':'')
+   +(isStandalone()?'':'<button class="btn" data-a="install">📲 Home screen par add karein</button>')+'</div>'+linkChips();
+}
+function drawBrand(){
+  var a=document.getElementById("brand"),b=document.getElementById("brand2"),hb=document.getElementById("hbrand"),v=document.getElementById("ver");
+  if(hb)hb.innerHTML=brandBtn();
+  if(a)a.innerHTML=brandHTML(true);
+  if(b)b.innerHTML=brandHTML(false);
+  if(v)v.textContent="· v"+APP_VERSION;
+  drawAbout();
+}
 function drawAuth(){
+  drawBrand();
   document.getElementById("atabs").innerHTML='<button data-a="amode" data-v="in" class="'+(AM=="in"?"on":"")+'">Login</button><button data-a="amode" data-v="up" class="'+(AM=="up"?"on":"")+'">Naya Account</button>';
   document.getElementById("abtn").textContent=AM=="up"?"Account Banayen":"Login";
   amsg("");
@@ -225,14 +297,16 @@ function startApp(){
   var m=(USER&&USER.user_metadata)||{};
   document.getElementById("who").innerHTML=USER?'👤 <b>'+esc(USER.email)+'</b> <button class="btn" data-a="logout">Logout</button> <span id="sync" class="mu"></span>':'';
   drawForm();showTab();
+  drawBrand();
   if(USER)checkAdmin();
 }
 async function checkAdmin(){
   var r=await sb.rpc("is_admin");
   if(r.data!==true)return;
+  if(document.getElementById("admbtn"))return;
   var n=document.getElementById("nav");
   n.style.gridTemplateColumns="repeat(5,1fr)";
-  n.insertAdjacentHTML("beforeend",'<button data-a="tab" data-v="admin">👑 Admin</button>');
+  n.insertAdjacentHTML("beforeend",'<button id="admbtn" data-a="tab" data-v="admin">👑 Admin</button>');
 }
 async function loadAdmin(){
   var box=document.getElementById("adm");
@@ -245,6 +319,12 @@ async function loadAdmin(){
   }).join(""):'<small class="mu">Abhi koi user nahi.</small>')+'</div>';
 }
 async function boot(){
+  if(!window.APP_CONFIG){
+    document.getElementById("app").style.display="none";
+    var ao=document.getElementById("auth");ao.style.display="flex";
+    ao.innerHTML='<div class="card" style="max-width:380px"><h2>⚠️ Settings file load nahi hui</h2><p class="mu" style="font-size:13px">config.js mein koi ghalti hai (aksar koi comma ya quote reh gaya hota hai) ya file maujood nahi. GitHub par config.js ko pichle theek version par wapis karein, phir page refresh karein. Aap ka data mehfooz hai.</p></div>';
+    return;
+  }
   if(!CLOUD){
     if(SUPABASE_URL&&SUPABASE_KEY)alert("Login system load nahi hua. Page refresh karein.");
     S=lload()||fresh();startApp();return;
@@ -366,8 +446,58 @@ function drawRep(){
   h+=sec("Income — head ke hisaab se",L.filter(function(t){return t.t=="inc"}),"pos");
   h+=sec("Bachat Jama — head ke hisaab se",L.filter(function(t){return t.t=="sav"}),"sv");
   h+='<div class="card"><h2>Saari entries ('+L.length+')</h2>'+(L.length?L.map(function(t){return rowHTML(t,true)}).join(""):'<small class="mu">Koi entry nahi.</small>')+'</div>';
-  h+='<div class="card noprint"><button class="btn" data-a="csv">⬇️ Excel (CSV) download</button> <button class="btn" data-a="print">🖨️ Print / PDF</button></div>';
+  h+=ledgerHTML(ledgerData());
+  h+='<div class="card noprint"><button class="btn" data-a="csv">⬇️ Entries ki CSV</button> <button class="btn" data-a="print">🖨️ Poori report print</button></div>';
   $("#rep").innerHTML=h;
+}
+/* ---------- Ledger ---------- */
+function eff(t){return(t.t=="inc"||t.t=="wd")?t.a:-t.a}
+function fnum(x){return Math.round(x).toLocaleString("en-US")}
+function ledgerData(){
+  var rg=getRange(),a=iso(rg.a),b=iso(rg.b),open=0;
+  S.tx.forEach(function(t){if(t.d<a)open+=eff(t)});
+  var L=S.tx.filter(function(t){return t.d>=a&&t.d<=b}).sort(function(x,y){return x.d.localeCompare(y.d)||(x.id<y.id?-1:1)});
+  var bal=open,cr=0,dr=0,rows=[];
+  L.forEach(function(t){
+    var e=eff(t);bal+=e;if(e>0)cr+=e;else dr-=e;
+    rows.push({d:t.d,ty:TN[t.t],c:t.c,s:t.s||"",n:t.n||"",cr:e>0?e:0,dr:e<0?-e:0,bal:bal});
+  });
+  return{rg:rg,open:open,rows:rows,close:bal,cr:cr,dr:dr};
+}
+function ledgerHTML(D){
+  var h='<div class="card" id="ledger"><div class="po"><b>Apna Rozana Hisaab — Ledger</b><br>'+esc(brandLabel())+'<br>'+esc(D.rg.l)+(USER?' · '+esc(USER.email):'')+'<br><small>Print ki tareekh: '+iso(new Date())+'</small></div>'
+   +'<h2>Ledger (Khaata)</h2><div class="sc"><table class="tbl"><thead><tr><th>Tareekh</th><th>Tafseel</th><th class="r">Jama (+)</th><th class="r">Naam (−)</th><th class="r">Balance</th></tr></thead><tbody>'
+   +'<tr><td></td><td><b>Opening Balance</b></td><td></td><td></td><td class="r"><b>'+fnum(D.open)+'</b></td></tr>';
+  D.rows.forEach(function(r){
+    h+='<tr><td>'+r.d+'</td><td><b>'+esc(r.c)+(r.s?' › '+esc(r.s):'')+'</b><br><small class="mu">'+esc(r.ty)+(r.n?' · '+esc(r.n):'')+'</small></td><td class="r pos">'+(r.cr?fnum(r.cr):'')+'</td><td class="r neg">'+(r.dr?fnum(r.dr):'')+'</td><td class="r">'+fnum(r.bal)+'</td></tr>';
+  });
+  h+='<tr class="tt"><td></td><td>Total / Closing Balance</td><td class="r">'+fnum(D.cr)+'</td><td class="r">'+fnum(D.dr)+'</td><td class="r">'+fnum(D.close)+'</td></tr></tbody></table></div>'
+   +'<small class="mu">Balance = Expense Account ka hisaab (Income + Bachat wapas − Kharcha − Bachat jama).</small>'
+   +'<div class="noprint" style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn" data-a="lpdf">📄 PDF download</button><button class="btn" data-a="lxls">📊 Excel download</button><button class="btn" data-a="lprint">🖨️ Ledger print</button></div></div>';
+  return h;
+}
+function ledgerFileName(D,ext){return "ledger-"+iso(D.rg.a)+"_"+iso(D.rg.b)+"."+ext}
+function ledgerXLS(){
+  var D=ledgerData(),r='<tr><th>Date</th><th>Type</th><th>Head</th><th>Sub Head</th><th>Note</th><th>Jama (+)</th><th>Naam (-)</th><th>Balance</th></tr>';
+  r+='<tr><td></td><td colspan="4"><b>Opening Balance</b></td><td></td><td></td><td>'+Math.round(D.open)+'</td></tr>';
+  D.rows.forEach(function(x){r+='<tr><td>'+x.d+'</td><td>'+esc(x.ty)+'</td><td>'+esc(x.c)+'</td><td>'+esc(x.s)+'</td><td>'+esc(x.n)+'</td><td>'+(x.cr||"")+'</td><td>'+(x.dr||"")+'</td><td>'+Math.round(x.bal)+'</td></tr>'});
+  r+='<tr><td></td><td colspan="4"><b>Total / Closing Balance</b></td><td>'+Math.round(D.cr)+'</td><td>'+Math.round(D.dr)+'</td><td>'+Math.round(D.close)+'</td></tr>';
+  var html='<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body><table border="1"><tr><td colspan="8"><b>Apna Rozana Hisaab Ledger - '+esc(D.rg.l)+'</b></td></tr><tr><td colspan="8">'+esc(brandLabel())+'</td></tr>'+r+'</table></body></html>';
+  dl(ledgerFileName(D,"xls"),html,"application/vnd.ms-excel",false);
+}
+function asc(s){return String(s==null?"":s).replace(/[^\x20-\x7E]/g,"-")}
+function ledgerPDF(){
+  var J=window.jspdf;
+  if(!J||!J.jsPDF){alert("PDF ki library load nahi hui. 'Ledger print' dabayen aur print screen mein 'Save as PDF' chunein.");return}
+  var D=ledgerData(),doc=new J.jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
+  doc.setFontSize(15);doc.text("Apna Rozana Hisaab - Ledger",14,15);
+  doc.setFontSize(9);doc.text(asc(brandLabel()),14,21);
+  doc.setFontSize(10);doc.text(asc(D.rg.l)+(USER?"   |   "+asc(USER.email):""),14,27);
+  var body=[["","Opening Balance","","",fnum(D.open)]];
+  D.rows.forEach(function(x){body.push([x.d,asc(x.c+(x.s?" > "+x.s:"")+" ("+x.ty+")"+(x.n?" - "+x.n:"")),x.cr?fnum(x.cr):"",x.dr?fnum(x.dr):"",fnum(x.bal)])});
+  body.push(["","Total / Closing Balance",fnum(D.cr),fnum(D.dr),fnum(D.close)]);
+  doc.autoTable({startY:32,head:[["Date","Detail","Jama (+)","Naam (-)","Balance"]],body:body,styles:{fontSize:8,cellPadding:1.8},headStyles:{fillColor:[15,122,77]},columnStyles:{2:{halign:"right"},3:{halign:"right"},4:{halign:"right"}},didParseCell:function(d){if(d.row.index==0||d.row.index==body.length-1)d.cell.styles.fontStyle="bold"},didDrawPage:function(){doc.setFontSize(8);doc.text(asc(brandLabel()),14,290)}});
+  doc.save(ledgerFileName(D,"pdf"));
 }
 function csvText(L){
   var r=[["Date","Type","Head","Sub Head","Amount","Note"]];
@@ -408,6 +538,11 @@ document.addEventListener("click",function(e){
   else if(a=="shift"){R.o+=+d.v;drawRep()}
   else if(a=="csv"){var g=getRange(),x=iso(g.a),y=iso(g.b);dl("hisaab-"+x+"_"+y+".csv",csvText(S.tx.filter(function(t){return t.d>=x&&t.d<=y})),"text/csv;charset=utf-8",true)}
   else if(a=="print")window.print();
+  else if(a=="lprint"){document.body.classList.add("pl");window.print()}
+  else if(a=="lpdf")ledgerPDF();
+  else if(a=="share")shareApp();
+  else if(a=="install")installApp();
+  else if(a=="lxls")ledgerXLS();
   else if(a=="addhead"){v=$("#nh-"+d.t).value.trim();if(!v)return;S.cats[d.t].push({n:v,s:[]});save();drawHeads();drawForm()}
   else if(a=="addsub"){var inp=$("#ns-"+d.t+"-"+d.i);v=inp.value.trim();if(!v)return;var c=S.cats[d.t][d.i];if(c.s.indexOf(v)<0)c.s.push(v);save();drawHeads();drawForm()}
   else if(a=="delsub"){S.cats[d.t][d.i].s.splice(+d.j,1);save();drawHeads();drawForm()}
@@ -435,9 +570,10 @@ document.addEventListener("change",function(e){
     fr.readAsText(t.files[0]);
   }
 });
+window.addEventListener("afterprint",function(){document.body.classList.remove("pl")});
 document.addEventListener("keydown",function(e){if(e.key=="Enter"&&e.target.id=="ap")doAuth()});
+if("serviceWorker" in navigator){window.addEventListener("load",function(){try{navigator.serviceWorker.register("sw.js").catch(function(){})}catch(e){}})}
 boot();
 </script>
 </body>
 </html>
-
